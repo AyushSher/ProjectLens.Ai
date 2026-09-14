@@ -318,3 +318,33 @@
   }
   .hero-float-a, .hero-float-b { animation: none !important; }
 }
+
+/* ── 3-D Flip Card ───────────────────────────────────────────────────
+   Ensures transform-style propagates correctly in all browsers.
+   The global transition rule on *, *::before, *::after would otherwise
+   override the 0.65 s flip transition — so we reset it here.           */
+.group:has(.group-hover\:\[transform\:rotateY\(180deg\)\]) {
+  /* nothing needed — just a specificity anchor */
+}
+
+/* Override the global * transition (set in @layer base) for the flip
+   track element so it doesn't fight the 0.65 s cubic-bezier transition */
+[style*="transformStyle: preserve-3d"],
+[style*="transform-style: preserve-3d"] {
+  transition-property: transform !important;
+  transition-duration: 0.65s !important;
+  transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1) !important;
+}
+
+/* Lift the hero cards slightly on hover via the outer wrapper */
+.hi-card-a:hover,
+.hi-card-b:hover {
+  filter: drop-shadow(0 24px 40px rgba(214, 255, 63, 0.18));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [style*="transformStyle: preserve-3d"],
+  [style*="transform-style: preserve-3d"] {
+    transition: none !important;
+  }
+}

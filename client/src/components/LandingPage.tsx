@@ -1229,42 +1229,171 @@ function CoverageCard({
   elevated?: boolean;
 }) {
   const isGood = status === 'Implemented';
+  const barCount = 6;
+  const filledBars = Math.round((percent / 100) * barCount);
+
   return (
+    // Outer div keeps the float animation; perspective lives here so
+    // the 3D flip does not interfere with translateY from the float.
     <div
-      className={`${className} rounded-2xl border border-[var(--lens-border)] bg-gradient-to-br from-[#181818] to-[#0d0d0d] p-4 shadow-2xl ${
-        elevated ? 'shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]' : ''
-      }`}
+      className={`${className} group`}
+      style={{ perspective: '900px' }}
     >
-      <div className="flex items-start justify-between mb-6">
-        <div className="w-7 h-9 rounded-md bg-[var(--lens-accent)]" />
-        <span
-          className={`text-[10px] font-mono font-bold px-2 py-1 rounded-full border ${
+      {/* Flip track — rotates 180° on group hover */}
+      <div
+        style={{
+          position: 'relative',
+          width: '100%',
+          transformStyle: 'preserve-3d',
+          transition: 'transform 0.65s cubic-bezier(0.23, 1, 0.32, 1)',
+        }}
+        className="group-hover:[transform:rotateY(180deg)]"
+      >
+        {/* ── FRONT FACE ───────────────────────────────────────────── */}
+        <div
+          style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
+          className={`rounded-2xl border border-[var(--lens-border)] bg-gradient-to-br from-[#181818] to-[#0d0d0d] p-4 shadow-2xl
+            transition-all duration-500
+            group-hover:border-[var(--lens-accent)]/50
+            group-hover:shadow-[0_0_32px_-4px_rgba(214,255,63,0.25)]
+            ${
+              elevated ? 'shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]' : ''
+            }`}
+        >
+          <div className="flex items-start justify-between mb-6">
+            {/* Accent block — pulses on hover */}
+            <div
+              className="w-7 h-9 rounded-md bg-[var(--lens-accent)] transition-all duration-500 group-hover:scale-110 group-hover:shadow-[0_0_14px_2px_rgba(214,255,63,0.5)]"
+            />
+            <span
+              className={`text-[10px] font-mono font-bold px-2 py-1 rounded-full border transition-all duration-300 ${
+                isGood
+                  ? 'text-[var(--lens-accent)] border-[var(--lens-accent)]/40 bg-[var(--lens-accent)]/10 group-hover:bg-[var(--lens-accent)]/20'
+                  : 'text-amber-300 border-amber-300/30 bg-amber-300/10 group-hover:bg-amber-300/20'
+              }`}
+            >
+              {status}
+            </span>
+          </div>
+
+          <p className="text-[11px] font-mono text-[var(--lens-text-dim)] mb-1">{module}</p>
+          <p className="text-3xl font-extrabold tracking-tight text-[var(--lens-text)] mb-4">
+            {percent}<span className="text-base text-[var(--lens-text-dim)]">%</span>
+          </p>
+
+          <div className="flex items-center justify-between">
+            <div className="flex gap-1">
+              {Array.from({ length: barCount }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-1 h-3 rounded-full transition-all duration-300 ${
+                    i < filledBars
+                      ? 'bg-[var(--lens-accent)] group-hover:shadow-[0_0_6px_rgba(214,255,63,0.7)]'
+                      : 'bg-white/10'
+                  }`}
+                  style={i < filledBars ? { transitionDelay: `${i * 40}ms` } : {}}
+                />
+              ))}
+            </div>
+            <div className="flex items-center gap-1 text-[var(--lens-text-dim)]">
+              {isGood ? <CheckCircle2 className="w-3.5 h-3.5" /> : <GitBranch className="w-3.5 h-3.5" />}
+              <span className="text-[10px] font-mono">GitHub</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── BACK FACE ────────────────────────────────────────────── */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            transform: 'rotateY(180deg)',
+          }}
+          className={`rounded-2xl border p-4 flex flex-col justify-between ${
             isGood
-              ? 'text-[var(--lens-accent)] border-[var(--lens-accent)]/40 bg-[var(--lens-accent)]/10'
-              : 'text-amber-300 border-amber-300/30 bg-amber-300/10'
+              ? 'border-[var(--lens-accent)]/50 bg-gradient-to-br from-[#0f1a00] to-[#0a0a0a] shadow-[0_0_40px_-8px_rgba(214,255,63,0.3)]'
+              : 'border-amber-300/40 bg-gradient-to-br from-[#1a1000] to-[#0a0a0a] shadow-[0_0_40px_-8px_rgba(251,191,36,0.2)]'
           }`}
         >
-          {status}
-        </span>
-      </div>
+          {/* Back header */}
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[9px] font-mono font-bold tracking-widest uppercase text-[var(--lens-text-dim)]">
+              Coverage Report
+            </span>
+            <span
+              className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                isGood ? 'bg-[var(--lens-accent)]/20 text-[var(--lens-accent)]' : 'bg-amber-300/20 text-amber-300'
+              }`}
+            >
+              {isGood ? '✓ PASS' : '⚠ REVIEW'}
+            </span>
+          </div>
 
-      <p className="text-[11px] font-mono text-[var(--lens-text-dim)] mb-1">{module}</p>
-      <p className="text-3xl font-extrabold tracking-tight text-[var(--lens-text)] mb-4">
-        {percent}<span className="text-base text-[var(--lens-text-dim)]">%</span>
-      </p>
+          {/* Module name */}
+          <p className="text-[13px] font-bold text-[var(--lens-text)] mb-3 leading-tight">{module}</p>
 
-      <div className="flex items-center justify-between">
-        <div className="flex gap-1">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className={`w-1 h-3 rounded-full ${i < Math.round((percent / 100) * 6) ? 'bg-[var(--lens-accent)]' : 'bg-white/10'}`}
-            />
-          ))}
-        </div>
-        <div className="flex items-center gap-1 text-[var(--lens-text-dim)]">
-          {isGood ? <CheckCircle2 className="w-3.5 h-3.5" /> : <GitBranch className="w-3.5 h-3.5" />}
-          <span className="text-[10px] font-mono">GitHub</span>
+          {/* Animated coverage meter */}
+          <div className="mb-3">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-[9px] font-mono text-[var(--lens-text-dim)]">Implementation</span>
+              <span className={`text-[10px] font-mono font-bold ${
+                isGood ? 'text-[var(--lens-accent)]' : 'text-amber-300'
+              }`}>{percent}%</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-white/8 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${
+                  isGood ? 'bg-[var(--lens-accent)]' : 'bg-amber-400'
+                }`}
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Mini stat grid */}
+          <div className="grid grid-cols-2 gap-1.5 mb-3">
+            {[
+              { label: 'Routes',   val: isGood ? '12/12' : '7/11' },
+              { label: 'Tests',    val: isGood ? '100%'  : '54%'  },
+              { label: 'Commits',  val: isGood ? '34'    : '18'   },
+              { label: 'Risk',     val: isGood ? 'Low'   : 'Med'  },
+            ].map(({ label, val }) => (
+              <div
+                key={label}
+                className="rounded-lg bg-white/5 px-2 py-1.5 border border-white/5"
+              >
+                <p className="text-[8px] font-mono text-[var(--lens-text-dim)] mb-0.5">{label}</p>
+                <p className={`text-[10px] font-mono font-bold ${
+                  isGood ? 'text-[var(--lens-accent)]' : 'text-amber-300'
+                }`}>{val}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between">
+            <div className="flex gap-0.5">
+              {Array.from({ length: barCount }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-1 h-2 rounded-full ${
+                    i < filledBars
+                      ? isGood ? 'bg-[var(--lens-accent)]' : 'bg-amber-400'
+                      : 'bg-white/10'
+                  }`}
+                />
+              ))}
+            </div>
+            <span className={`text-[8px] font-mono font-bold px-1.5 py-0.5 rounded-full border ${
+              isGood
+                ? 'text-[var(--lens-accent)] border-[var(--lens-accent)]/30'
+                : 'text-amber-300 border-amber-300/30'
+            }`}>
+              View Details →
+            </span>
+          </div>
         </div>
       </div>
     </div>
