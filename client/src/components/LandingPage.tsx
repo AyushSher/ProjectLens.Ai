@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { useLenis } from './SmoothScroll';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 import {
@@ -188,8 +189,14 @@ function loadRazorpayScript(): Promise<boolean> {
   });
 }
 
-// Smooth-scroll to a section by ID
-function scrollTo(id: string) {
+// Smooth-scroll to a section by ID.
+// Uses Lenis when available (consistent easing); falls back to native scrollIntoView.
+function scrollTo(id: string, lenis?: ReturnType<typeof useLenis>['lenis']) {
+  if (lenis) {
+    // offset: -80 accounts for the sticky navbar height
+    lenis.scrollTo(`#${id}`, { offset: -80 });
+    return;
+  }
   const el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -198,6 +205,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
   const { theme, toggleTheme } = useTheme();
   const { user, addPaidCredits, refreshCredits } = useAuth();
   const { showToast } = useToast();
+  const { lenis } = useLenis();
   const isDark = theme === 'dark';
   const tokens = getTokens(isDark);
   const [processingPack, setProcessingPack] = useState<string | null>(null);
@@ -406,7 +414,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
             {/* Brand */}
             <div
               className="flex items-center gap-2 flex-shrink-0 cursor-pointer"
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              onClick={() => lenis ? lenis.scrollTo(0) : window.scrollTo({ top: 0, behavior: 'smooth' })}
               style={{ transition: 'gap 0.3s ease' }}
             >
               <div
@@ -457,7 +465,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
               {NAV_LINKS.map((link) => (
                 <button
                   key={link.label}
-                  onClick={() => scrollTo(link.href.slice(1))}
+                  onClick={() => scrollTo(link.href.slice(1), lenis)}
                   className="hover:text-[var(--lens-text)] transition-colors cursor-pointer bg-transparent border-0 p-0"
                   style={{ color: 'inherit' }}
                 >
@@ -566,7 +574,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
               {NAV_LINKS.map((link) => (
                 <button
                   key={link.label}
-                  onClick={() => { scrollTo(link.href.slice(1)); setMobileNavOpen(false); }}
+                  onClick={() => { scrollTo(link.href.slice(1), lenis); setMobileNavOpen(false); }}
                   className="w-full text-left px-4 py-3 rounded-xl text-[14px] font-semibold transition-colors cursor-pointer"
                   style={{ color: 'var(--lens-text-dim)' }}
                   onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--lens-accent)')}
@@ -642,7 +650,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </button>
             <button
-              onClick={() => scrollTo('pricing')}
+              onClick={() => scrollTo('pricing', lenis)}
               className="inline-flex items-center gap-2.5 text-sm font-semibold text-[var(--lens-text)] cursor-pointer"
             >
               <span className="w-9 h-9 rounded-full bg-[var(--lens-panel-2)] border border-[var(--lens-border)] flex items-center justify-center">
@@ -1168,7 +1176,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button
-                onClick={() => scrollTo('pricing')}
+                onClick={() => scrollTo('pricing', lenis)}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-colors cursor-pointer border"
                 style={{ color: 'var(--lens-text-dim)', borderColor: 'var(--lens-border)' }}
               >
