@@ -3,7 +3,7 @@
 > **Evidence-first requirement-to-code analysis for software teams.**
 
 [![Live on GitHub](https://img.shields.io/badge/GitHub-Bhavik9696%2FProjectLens.Ai-181717?logo=github)](https://github.com/Bhavik9696/ProjectLens.Ai)
-[![Stack](https://img.shields.io/badge/Stack-React%20%7C%20Node.js%20%7C%20MongoDB%20%7C%20Gemini-4B9CD3)](https://github.com/Bhavik9696/ProjectLens.Ai)
+[![Stack](https://img.shields.io/badge/Stack-React%20%7C%20Redux%20%7C%20Node.js%20%7C%20MongoDB%20%7C%20Gemini-4B9CD3)](https://github.com/Bhavik9696/ProjectLens.Ai)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -97,7 +97,8 @@ AI Analysis               (only verified, redacted evidence sent to Gemini)
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, Lucide icons |
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS, Lucide icons |
+| **State Management** | Redux Toolkit (RTK) + RTK Query |
 | **Backend** | Node.js, Express.js (ESM) |
 | **Database** | MongoDB (Mongoose) |
 | **AI / LLM** | Google Gemini (via `@google/genai`) |
@@ -218,7 +219,7 @@ No raw source code or commit messages with author identities are included in the
 projectlens.ai(RAG)/
 ├── client/                         # React + Vite frontend
 │   └── src/
-│       ├── components/
+│       ├── components/             # 30+ UI components
 │       │   ├── LandingPage.tsx     # Landing page with Privacy section
 │       │   ├── Dashboard.tsx       # Project dashboard
 │       │   ├── CoverageAnalyzer.tsx# Requirement analysis view
@@ -226,8 +227,18 @@ projectlens.ai(RAG)/
 │       │   ├── AICopilotChat.tsx   # Copilot chat interface
 │       │   ├── GitHubConnector.tsx # GitHub repository connection
 │       │   └── DocumentUploader.tsx# SRS upload + requirement extraction
-│       ├── contexts/               # Auth, Theme, Toast
-│       ├── services/api.ts         # API client
+│       ├── store/                  # Redux Toolkit state management
+│       │   ├── index.ts            # Root store (RootState, AppDispatch)
+│       │   ├── hooks.ts            # Typed useAppDispatch / useAppSelector
+│       │   ├── authSlice.ts        # Auth state + async thunks
+│       │   ├── notificationsSlice.ts # In-app notification list
+│       │   ├── projectsSlice.ts    # Project list + current project
+│       │   ├── uiSlice.ts          # View routing, tabs, modal flags
+│       │   ├── themeSlice.ts       # Dark / light theme with localStorage sync
+│       │   └── projectsApi.ts      # RTK Query — project CRUD with caching
+│       ├── contexts/               # Thin Redux shims (useAuth, useTheme, useNotifications)
+│       │   │                       # + standalone: ToastContext, CommandPaletteContext
+│       ├── services/api.ts         # API client (analysis, copilot, payments)
 │       └── types.ts                # TypeScript type definitions
 │
 ├── server/                         # Node.js + Express backend
@@ -338,6 +349,17 @@ npm run dev
 ---
 
 ## Recent Changes
+
+### Redux Toolkit Integration (v3)
+
+- **Centralized state management** — replaced 6 React Contexts with Redux Toolkit slices: `auth`, `notifications`, `projects`, `ui`, `theme`
+- **RTK Query** — project CRUD (fetch / create / save / delete) now uses RTK Query with automatic caching and cache invalidation; no more manual `useEffect` + `setIsLoading` patterns
+- **Backward-compatible shim pattern** — `useAuth()`, `useNotifications()`, `useTheme()` hooks preserved with identical public APIs; all 30 components required zero changes
+- **Redux DevTools support** — full action history and time-travel debugging available via the Redux DevTools browser extension
+- **Leaner `App.tsx`** — removed 15+ `useState` calls; all UI state (`activeTab`, modal flags, `selectedRequirement`, `view`) dispatched via typed Redux actions
+- **Deployment safe** — server, MongoDB, and environment variables completely untouched
+
+---
 
 ### Evidence-Based Analysis Pipeline (v2)
 

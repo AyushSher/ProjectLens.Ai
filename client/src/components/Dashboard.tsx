@@ -190,9 +190,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onNavigateTab, freeP
       <div
         className="rounded-2xl border p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden"
         style={{
-          background:  outOfCredits ? 'rgba(244,63,94,0.04)' : 'var(--panel)',
-          borderColor: outOfCredits ? 'rgba(244,63,94,0.3)'  : 'var(--border)',
-          boxShadow:   outOfCredits ? '0 0 30px rgba(244,63,94,0.06)' : 'none',
+          background: outOfCredits ? 'rgba(244,63,94,0.04)' : 'var(--panel)',
+          borderColor: outOfCredits ? 'rgba(244,63,94,0.3)' : 'var(--border)',
+          boxShadow: outOfCredits ? '0 0 30px rgba(244,63,94,0.06)' : 'none',
         }}
       >
         <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full pointer-events-none"
@@ -250,9 +250,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onNavigateTab, freeP
             onClick={onBuyCredits}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer"
             style={{
-              background:  outOfCredits ? '#f43f5e' : 'var(--accent)',
-              color:       '#000',
-              boxShadow:   outOfCredits ? '0 0 20px rgba(244,63,94,0.35)' : '0 0 20px rgba(214,255,63,0.25)',
+              background: outOfCredits ? '#f43f5e' : 'var(--accent)',
+              color: '#000',
+              boxShadow: outOfCredits ? '0 0 20px rgba(244,63,94,0.35)' : '0 0 20px rgba(214,255,63,0.25)',
             }}
           >
             <Zap className="w-3.5 h-3.5" />

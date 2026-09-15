@@ -59,8 +59,8 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
   // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
+    window.document.addEventListener('keydown', handler);
+    return () => window.document.removeEventListener('keydown', handler);
   }, [onClose]);
 
   if (!document) return null;

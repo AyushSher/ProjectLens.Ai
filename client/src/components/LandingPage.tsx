@@ -46,39 +46,39 @@ interface LandingPageProps {
 function getTokens(isDark: boolean): React.CSSProperties {
   return isDark
     ? {
-        ['--lens-bg' as any]:          '#0a0a0a',
-        ['--lens-panel' as any]:       '#131313',
-        ['--lens-panel-2' as any]:     '#17170e',
-        ['--lens-border' as any]:      'rgba(255,255,255,0.09)',
-        ['--lens-accent' as any]:      '#d6ff3f',
-        ['--lens-accent-dim' as any]:  '#9cb82e',
-        ['--lens-text' as any]:        '#f5f5f1',
-        ['--lens-text-dim' as any]:    '#9a9a92',
-      }
+      ['--lens-bg' as any]: '#0a0a0a',
+      ['--lens-panel' as any]: '#131313',
+      ['--lens-panel-2' as any]: '#17170e',
+      ['--lens-border' as any]: 'rgba(255,255,255,0.09)',
+      ['--lens-accent' as any]: '#d6ff3f',
+      ['--lens-accent-dim' as any]: '#9cb82e',
+      ['--lens-text' as any]: '#f5f5f1',
+      ['--lens-text-dim' as any]: '#9a9a92',
+    }
     : {
-        ['--lens-bg' as any]:          '#f5f5f0',
-        ['--lens-panel' as any]:       '#ffffff',
-        ['--lens-panel-2' as any]:     '#fffef5',
-        ['--lens-border' as any]:      'rgba(0,0,0,0.10)',
-        ['--lens-accent' as any]:      '#8aaa00',
-        ['--lens-accent-dim' as any]:  '#6a8800',
-        ['--lens-text' as any]:        '#111110',
-        ['--lens-text-dim' as any]:    '#666660',
-      };
+      ['--lens-bg' as any]: '#f5f5f0',
+      ['--lens-panel' as any]: '#ffffff',
+      ['--lens-panel-2' as any]: '#fffef5',
+      ['--lens-border' as any]: 'rgba(0,0,0,0.10)',
+      ['--lens-accent' as any]: '#8aaa00',
+      ['--lens-accent-dim' as any]: '#6a8800',
+      ['--lens-text' as any]: '#111110',
+      ['--lens-text-dim' as any]: '#666660',
+    };
 }
 
 const NAV_LINKS = [
-  { label: 'Features',    href: '#features'    },
-  { label: 'Privacy',     href: '#privacy'     },
+  { label: 'Features', href: '#features' },
+  { label: 'Privacy', href: '#privacy' },
   { label: 'How It Works', href: '#how-it-works' },
-  { label: 'Pricing',     href: '#pricing'     },
+  { label: 'Pricing', href: '#pricing' },
 ];
 
 const INTEGRATIONS = [
-  { icon: Github,   label: 'GitHub'    },
-  { icon: Database, label: 'MongoDB'   },
-  { icon: Server,   label: 'Express'   },
-  { icon: Component,label: 'React'     },
+  { icon: Github, label: 'GitHub' },
+  { icon: Database, label: 'MongoDB' },
+  { icon: Server, label: 'Express' },
+  { icon: Component, label: 'React' },
   { icon: Sparkles, label: 'Gemini AI' },
 ];
 
@@ -183,7 +183,7 @@ function loadRazorpayScript(): Promise<boolean> {
     if ((window as any).Razorpay) { resolve(true); return; }
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.onload  = () => resolve(true);
+    script.onload = () => resolve(true);
     script.onerror = () => resolve(false);
     document.body.appendChild(script);
   });
@@ -209,8 +209,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
   const isDark = theme === 'dark';
   const tokens = getTokens(isDark);
   const [processingPack, setProcessingPack] = useState<string | null>(null);
-  const [paymentMode, setPaymentMode]       = useState<'live' | 'simulation' | null>(null);
-  const [mobileNavOpen, setMobileNavOpen]   = useState(false);
+  const [paymentMode, setPaymentMode] = useState<'live' | 'simulation' | null>(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   // ── Sticky scroll animation ───────────────────────────────────────────
   const [scrolled, setScrolled] = useState(false);
   const scrollRafRef = useRef<number>(0);
@@ -232,7 +232,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
 
   // ── Cursor glow ──────────────────────────────────────────────────────
   const glowRef = useRef<HTMLDivElement>(null);
-  const rafRef  = useRef<number>(0);
+  const rafRef = useRef<number>(0);
 
   useEffect(() => {
     if (window.matchMedia('(hover: none)').matches) return;
@@ -287,9 +287,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
       if (orderData.simulation || paymentMode === 'simulation') {
         await new Promise((r) => setTimeout(r, 1000));
         const result = await verifyPaymentApi({
-          razorpay_order_id:   orderData.orderId,
+          razorpay_order_id: orderData.orderId,
           razorpay_payment_id: `sim_pay_${Date.now()}`,
-          razorpay_signature:  'simulation',
+          razorpay_signature: 'simulation',
           packId,
         } as any);
         if (result.success) {
@@ -309,20 +309,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
 
       await new Promise<void>((resolve) => {
         const options: any = {
-          key:         orderData.keyId,
-          amount:      orderData.amount,
-          currency:    orderData.currency,
-          name:        'ProjectLens AI',
+          key: orderData.keyId,
+          amount: orderData.amount,
+          currency: orderData.currency,
+          name: 'ProjectLens AI',
           description: `${orderData.label}`,
-          order_id:    orderData.orderId,
-          prefill:     { name: user.name, email: user.email },
-          theme:       { color: isDark ? '#d6ff3f' : '#8aaa00' },
+          order_id: orderData.orderId,
+          prefill: { name: user.name, email: user.email },
+          theme: { color: isDark ? '#d6ff3f' : '#8aaa00' },
           handler: async (response: any) => {
             try {
               const result = await verifyPaymentApi({
-                razorpay_order_id:   response.razorpay_order_id,
+                razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature:  response.razorpay_signature,
+                razorpay_signature: response.razorpay_signature,
                 packId,
               });
               if (result.success) {
@@ -394,8 +394,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
               borderRadius: scrolled ? '14px' : '16px',
               boxShadow: scrolled
                 ? (isDark
-                    ? '0 8px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04), 0 0 24px -8px rgba(214,255,63,0.12)'
-                    : '0 8px 40px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.06), 0 0 24px -8px rgba(138,170,0,0.10)')
+                  ? '0 8px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04), 0 0 24px -8px rgba(214,255,63,0.12)'
+                  : '0 8px 40px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.06), 0 0 24px -8px rgba(138,170,0,0.10)')
                 : '0 0 0 1px rgba(255,255,255,0.02)',
               /* compact height: reduce py when scrolled */
               padding: scrolled ? '6px 16px' : '10px 16px',
@@ -782,12 +782,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
 
             {/* Pipeline steps */}
             {[
-              { label: 'Your Repository',           note: 'File tree, commits, pull requests' },
-              { label: 'Local Processing',           note: 'File classification, code graph build' },
-              { label: 'Secret Detection',           note: '.env, API keys, tokens, credentials' },
-              { label: 'Relevant Evidence Retrieval',note: 'Requirement-specific RAG retrieval' },
-              { label: 'Sensitive Data Redaction',   note: 'Keys, passwords, secrets replaced' },
-              { label: 'AI Analysis',                note: 'Only relevant evidence sent to model' },
+              { label: 'Your Repository', note: 'File tree, commits, pull requests' },
+              { label: 'Local Processing', note: 'File classification, code graph build' },
+              { label: 'Secret Detection', note: '.env, API keys, tokens, credentials' },
+              { label: 'Relevant Evidence Retrieval', note: 'Requirement-specific RAG retrieval' },
+              { label: 'Sensitive Data Redaction', note: 'Keys, passwords, secrets replaced' },
+              { label: 'AI Analysis', note: 'Only relevant evidence sent to model' },
             ].map((step, idx, arr) => (
               <div key={step.label} className="relative">
                 <div className="flex items-start gap-4">
@@ -799,8 +799,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
                         background: idx === arr.length - 1
                           ? 'var(--lens-accent)'
                           : idx === 2 || idx === 4
-                          ? 'rgba(214,255,63,0.15)'
-                          : 'var(--lens-panel-2)',
+                            ? 'rgba(214,255,63,0.15)'
+                            : 'var(--lens-panel-2)',
                         borderColor: idx === arr.length - 1
                           ? 'var(--lens-accent)'
                           : 'var(--lens-border)',
@@ -810,8 +810,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
                       {idx === arr.length - 1
                         ? <Sparkles className="w-3.5 h-3.5" />
                         : idx === 2 || idx === 4
-                        ? <Shield className="w-3.5 h-3.5" />
-                        : <span>{idx + 1}</span>}
+                          ? <Shield className="w-3.5 h-3.5" />
+                          : <span>{idx + 1}</span>}
                     </div>
                     {idx < arr.length - 1 && (
                       <div className="w-px flex-1 my-1" style={{ minHeight: '24px', background: 'var(--lens-border)' }} />
@@ -1012,11 +1012,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
                 key={pack.id}
                 className={`reveal reveal-d${idx + 1} relative rounded-2xl border flex flex-col overflow-hidden transition-all duration-200 hover:-translate-y-1`}
                 style={{
-                  background:   pack.popular
+                  background: pack.popular
                     ? (isDark ? 'linear-gradient(145deg,#111409,#0d100a)' : 'linear-gradient(145deg,#f5fbda,#ecf5c4)')
                     : 'var(--lens-panel)',
-                  borderColor:  pack.popular ? 'rgba(214,255,63,0.32)' : 'var(--lens-border)',
-                  boxShadow:    pack.popular ? '0 0 28px -12px rgba(214,255,63,0.22)' : 'none',
+                  borderColor: pack.popular ? 'rgba(214,255,63,0.32)' : 'var(--lens-border)',
+                  boxShadow: pack.popular ? '0 0 28px -12px rgba(214,255,63,0.22)' : 'none',
                 }}
               >
                 {/* Popular ribbon */}
@@ -1256,8 +1256,7 @@ function CoverageCard({
             transition-all duration-500
             group-hover:border-[var(--lens-accent)]/50
             group-hover:shadow-[0_0_32px_-4px_rgba(214,255,63,0.25)]
-            ${
-              elevated ? 'shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]' : ''
+            ${elevated ? 'shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]' : ''
             }`}
         >
           <div className="flex items-start justify-between mb-6">
@@ -1266,11 +1265,10 @@ function CoverageCard({
               className="w-7 h-9 rounded-md bg-[var(--lens-accent)] transition-all duration-500 group-hover:scale-110 group-hover:shadow-[0_0_14px_2px_rgba(214,255,63,0.5)]"
             />
             <span
-              className={`text-[10px] font-mono font-bold px-2 py-1 rounded-full border transition-all duration-300 ${
-                isGood
+              className={`text-[10px] font-mono font-bold px-2 py-1 rounded-full border transition-all duration-300 ${isGood
                   ? 'text-[var(--lens-accent)] border-[var(--lens-accent)]/40 bg-[var(--lens-accent)]/10 group-hover:bg-[var(--lens-accent)]/20'
                   : 'text-amber-300 border-amber-300/30 bg-amber-300/10 group-hover:bg-amber-300/20'
-              }`}
+                }`}
             >
               {status}
             </span>
@@ -1286,11 +1284,10 @@ function CoverageCard({
               {Array.from({ length: barCount }).map((_, i) => (
                 <div
                   key={i}
-                  className={`w-1 h-3 rounded-full transition-all duration-300 ${
-                    i < filledBars
+                  className={`w-1 h-3 rounded-full transition-all duration-300 ${i < filledBars
                       ? 'bg-[var(--lens-accent)] group-hover:shadow-[0_0_6px_rgba(214,255,63,0.7)]'
                       : 'bg-white/10'
-                  }`}
+                    }`}
                   style={i < filledBars ? { transitionDelay: `${i * 40}ms` } : {}}
                 />
               ))}
@@ -1311,11 +1308,10 @@ function CoverageCard({
             WebkitBackfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)',
           }}
-          className={`rounded-2xl border p-4 flex flex-col justify-between ${
-            isGood
+          className={`rounded-2xl border p-4 flex flex-col justify-between ${isGood
               ? 'border-[var(--lens-accent)]/50 bg-gradient-to-br from-[#0f1a00] to-[#0a0a0a] shadow-[0_0_40px_-8px_rgba(214,255,63,0.3)]'
               : 'border-amber-300/40 bg-gradient-to-br from-[#1a1000] to-[#0a0a0a] shadow-[0_0_40px_-8px_rgba(251,191,36,0.2)]'
-          }`}
+            }`}
         >
           {/* Back header */}
           <div className="flex items-center justify-between mb-3">
@@ -1323,9 +1319,8 @@ function CoverageCard({
               Coverage Report
             </span>
             <span
-              className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${
-                isGood ? 'bg-[var(--lens-accent)]/20 text-[var(--lens-accent)]' : 'bg-amber-300/20 text-amber-300'
-              }`}
+              className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${isGood ? 'bg-[var(--lens-accent)]/20 text-[var(--lens-accent)]' : 'bg-amber-300/20 text-amber-300'
+                }`}
             >
               {isGood ? '✓ PASS' : '⚠ REVIEW'}
             </span>
@@ -1338,15 +1333,13 @@ function CoverageCard({
           <div className="mb-3">
             <div className="flex justify-between items-center mb-1">
               <span className="text-[9px] font-mono text-[var(--lens-text-dim)]">Implementation</span>
-              <span className={`text-[10px] font-mono font-bold ${
-                isGood ? 'text-[var(--lens-accent)]' : 'text-amber-300'
-              }`}>{percent}%</span>
+              <span className={`text-[10px] font-mono font-bold ${isGood ? 'text-[var(--lens-accent)]' : 'text-amber-300'
+                }`}>{percent}%</span>
             </div>
             <div className="h-1.5 rounded-full bg-white/8 overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all duration-700 ${
-                  isGood ? 'bg-[var(--lens-accent)]' : 'bg-amber-400'
-                }`}
+                className={`h-full rounded-full transition-all duration-700 ${isGood ? 'bg-[var(--lens-accent)]' : 'bg-amber-400'
+                  }`}
                 style={{ width: `${percent}%` }}
               />
             </div>
@@ -1355,19 +1348,18 @@ function CoverageCard({
           {/* Mini stat grid */}
           <div className="grid grid-cols-2 gap-1.5 mb-3">
             {[
-              { label: 'Routes',   val: isGood ? '12/12' : '7/11' },
-              { label: 'Tests',    val: isGood ? '100%'  : '54%'  },
-              { label: 'Commits',  val: isGood ? '34'    : '18'   },
-              { label: 'Risk',     val: isGood ? 'Low'   : 'Med'  },
+              { label: 'Routes', val: isGood ? '12/12' : '7/11' },
+              { label: 'Tests', val: isGood ? '100%' : '54%' },
+              { label: 'Commits', val: isGood ? '34' : '18' },
+              { label: 'Risk', val: isGood ? 'Low' : 'Med' },
             ].map(({ label, val }) => (
               <div
                 key={label}
                 className="rounded-lg bg-white/5 px-2 py-1.5 border border-white/5"
               >
                 <p className="text-[8px] font-mono text-[var(--lens-text-dim)] mb-0.5">{label}</p>
-                <p className={`text-[10px] font-mono font-bold ${
-                  isGood ? 'text-[var(--lens-accent)]' : 'text-amber-300'
-                }`}>{val}</p>
+                <p className={`text-[10px] font-mono font-bold ${isGood ? 'text-[var(--lens-accent)]' : 'text-amber-300'
+                  }`}>{val}</p>
               </div>
             ))}
           </div>
@@ -1378,19 +1370,17 @@ function CoverageCard({
               {Array.from({ length: barCount }).map((_, i) => (
                 <div
                   key={i}
-                  className={`w-1 h-2 rounded-full ${
-                    i < filledBars
+                  className={`w-1 h-2 rounded-full ${i < filledBars
                       ? isGood ? 'bg-[var(--lens-accent)]' : 'bg-amber-400'
                       : 'bg-white/10'
-                  }`}
+                    }`}
                 />
               ))}
             </div>
-            <span className={`text-[8px] font-mono font-bold px-1.5 py-0.5 rounded-full border ${
-              isGood
+            <span className={`text-[8px] font-mono font-bold px-1.5 py-0.5 rounded-full border ${isGood
                 ? 'text-[var(--lens-accent)] border-[var(--lens-accent)]/30'
                 : 'text-amber-300 border-amber-300/30'
-            }`}>
+              }`}>
               View Details →
             </span>
           </div>

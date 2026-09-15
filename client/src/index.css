@@ -3,35 +3,35 @@
 @layer base {
   :root {
     /* ── Landing Page design tokens — single source of truth ── */
-    --bg:         #0a0a0a;
-    --panel:      #131313;
-    --panel-2:    #17170e;
-    --surface-3:  #1c1c1c;
-    --surface-4:  #111111;
-    --surface-5:  #242424;
+    --bg: #0a0a0a;
+    --panel: #131313;
+    --panel-2: #17170e;
+    --surface-3: #1c1c1c;
+    --surface-4: #111111;
+    --surface-5: #242424;
 
-    --border:     rgba(255,255,255,0.09);
-    --border-1:   rgba(255,255,255,0.09);
-    --border-2:   rgba(255,255,255,0.14);
+    --border: rgba(255, 255, 255, 0.09);
+    --border-1: rgba(255, 255, 255, 0.09);
+    --border-2: rgba(255, 255, 255, 0.14);
 
-    --text-1:     #f5f5f1;
-    --text-2:     #e8e8e4;
-    --text-3:     #c8c8c0;
-    --text-4:     #9a9a92;
-    --text-5:     #6a6a62;
-    --text-6:     #4a4a44;
-    --text-dim:   #9a9a92;
+    --text-1: #f5f5f1;
+    --text-2: #e8e8e4;
+    --text-3: #c8c8c0;
+    --text-4: #9a9a92;
+    --text-5: #6a6a62;
+    --text-6: #4a4a44;
+    --text-dim: #9a9a92;
 
     /* Electric yellow-green accent — Landing Page signature colour */
-    --accent:     #d6ff3f;
+    --accent: #d6ff3f;
     --accent-dim: #9cb82e;
-    --accent-glow: rgba(214,255,63,0.15);
-    --border-glow: rgba(214,255,63,0.12);
+    --accent-glow: rgba(214, 255, 63, 0.15);
+    --border-glow: rgba(214, 255, 63, 0.12);
 
     /* Semantic status — keep readable against dark backgrounds */
-    --success:    #10b981;
-    --warning:    #f59e0b;
-    --danger:     #ef4444;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
 
     --glow-opacity: 0.08;
     color-scheme: dark;
@@ -39,34 +39,34 @@
 
   /* ── Light Theme ─────────────────────────────────────────────────── */
   [data-theme="light"] {
-    --bg:         #f5f5f0;
-    --panel:      #ffffff;
-    --panel-2:    #fffef5;
-    --surface-3:  #ebebeb;
-    --surface-4:  #f0f0ea;
-    --surface-5:  #e2e2dc;
+    --bg: #f5f5f0;
+    --panel: #ffffff;
+    --panel-2: #fffef5;
+    --surface-3: #ebebeb;
+    --surface-4: #f0f0ea;
+    --surface-5: #e2e2dc;
 
-    --border:     rgba(0,0,0,0.10);
-    --border-1:   rgba(0,0,0,0.10);
-    --border-2:   rgba(0,0,0,0.16);
+    --border: rgba(0, 0, 0, 0.10);
+    --border-1: rgba(0, 0, 0, 0.10);
+    --border-2: rgba(0, 0, 0, 0.16);
 
-    --text-1:     #111110;
-    --text-2:     #222220;
-    --text-3:     #444440;
-    --text-4:     #666660;
-    --text-5:     #888882;
-    --text-6:     #aaaaA4;
-    --text-dim:   #666660;
+    --text-1: #111110;
+    --text-2: #222220;
+    --text-3: #444440;
+    --text-4: #666660;
+    --text-5: #888882;
+    --text-6: #aaaaA4;
+    --text-dim: #666660;
 
     /* Keep the signature neon-lime accent — it pops on white too */
-    --accent:     #8aaa00;
+    --accent: #8aaa00;
     --accent-dim: #6a8800;
-    --accent-glow: rgba(138,170,0,0.15);
-    --border-glow: rgba(138,170,0,0.12);
+    --accent-glow: rgba(138, 170, 0, 0.15);
+    --border-glow: rgba(138, 170, 0, 0.12);
 
-    --success:    #059669;
-    --warning:    #d97706;
-    --danger:     #dc2626;
+    --success: #059669;
+    --warning: #d97706;
+    --danger: #dc2626;
 
     --glow-opacity: 0.06;
     color-scheme: light;
@@ -77,25 +77,30 @@
     color: var(--text-1);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background-image:
-      radial-gradient(ellipse at 50% 0%,  rgba(214,255,63,var(--glow-opacity)) 0%, transparent 60%),
-      radial-gradient(circle  at 100% 100%, rgba(156,184,46,calc(var(--glow-opacity)*0.6)) 0%, transparent 50%);
+      radial-gradient(ellipse at 50% 0%, rgba(214, 255, 63, var(--glow-opacity)) 0%, transparent 60%),
+      radial-gradient(circle at 100% 100%, rgba(156, 184, 46, calc(var(--glow-opacity)*0.6)) 0%, transparent 50%);
     background-attachment: fixed;
     transition: background-color 0.25s ease, color 0.25s ease;
   }
 
   /* Smooth transitions on all themed elements */
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     transition-property: background-color, border-color, color, box-shadow;
     transition-duration: 0.25s;
     transition-timing-function: ease;
   }
 
   /* Exclude transitions on animations / transforms to avoid jank */
-  [class*="animate-"], [class*="transition-"] {
+  [class*="animate-"],
+  [class*="transition-"] {
     transition-property: revert;
   }
 
-  code, pre, .font-mono {
+  code,
+  pre,
+  .font-mono {
     font-family: 'JetBrains Mono', monospace;
   }
 }
@@ -117,9 +122,9 @@
 /* ── AI Analysis Engine Panel ───────────────────────────────────── */
 .ai-copilot-panel {
   background: linear-gradient(135deg,
-    color-mix(in srgb, var(--panel) 95%, transparent),
-    color-mix(in srgb, var(--surface-3) 90%, transparent));
-  border: 1px solid rgba(214,255,63,0.25);
+      color-mix(in srgb, var(--panel) 95%, transparent),
+      color-mix(in srgb, var(--surface-3) 90%, transparent));
+  border: 1px solid rgba(214, 255, 63, 0.25);
   border-radius: 0.75rem;
   position: relative;
   overflow: hidden;
@@ -142,20 +147,38 @@
 }
 
 /* ── Scrollbars ─────────────────────────────────────────────────── */
-::-webkit-scrollbar        { width: 6px; height: 6px; }
-::-webkit-scrollbar-track  { background: var(--bg); }
-::-webkit-scrollbar-thumb  {
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
   background: var(--surface-3);
   border-radius: 3px;
   border: 1px solid rgba(214, 255, 63, 0.10);
 }
-::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-dim);
+}
 
 /* ── Skeleton shimmer ───────────────────────────────────────────── */
 @keyframes skeleton-pulse {
-  0%, 100% { opacity: 0.5; }
-  50%       { opacity: 0.9; }
+
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 0.9;
+  }
 }
+
 .skeleton {
   background: var(--surface-3);
   border-radius: 0.5rem;
@@ -163,20 +186,38 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .skeleton { animation: none; }
+  .skeleton {
+    animation: none;
+  }
 }
 
 /* ── Hero card float animations ─────────────────────────────────── */
 @keyframes hero-float-a {
-  0%   { transform: translateY(0px)   rotate(-6deg); }
-  50%  { transform: translateY(-8px)  rotate(-6.6deg); }
-  100% { transform: translateY(0px)   rotate(-6deg); }
+  0% {
+    transform: translateY(0px) rotate(-6deg);
+  }
+
+  50% {
+    transform: translateY(-8px) rotate(-6.6deg);
+  }
+
+  100% {
+    transform: translateY(0px) rotate(-6deg);
+  }
 }
 
 @keyframes hero-float-b {
-  0%   { transform: translateY(0px)   rotate(3deg); }
-  50%  { transform: translateY(-8px)  rotate(3.5deg); }
-  100% { transform: translateY(0px)   rotate(3deg); }
+  0% {
+    transform: translateY(0px) rotate(3deg);
+  }
+
+  50% {
+    transform: translateY(-8px) rotate(3.5deg);
+  }
+
+  100% {
+    transform: translateY(0px) rotate(3deg);
+  }
 }
 
 .hero-float-a {
@@ -190,13 +231,25 @@
 
 /* ── Scroll-reveal fade-up ───────────────────────────────────────── */
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(22px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* Base hidden state — applied before element enters viewport */
@@ -214,16 +267,35 @@
 }
 
 /* Stagger delays for grid children */
-.reveal-d1 { animation-delay: 0.08s !important; }
-.reveal-d2 { animation-delay: 0.17s !important; }
-.reveal-d3 { animation-delay: 0.26s !important; }
-.reveal-d4 { animation-delay: 0.35s !important; }
+.reveal-d1 {
+  animation-delay: 0.08s !important;
+}
+
+.reveal-d2 {
+  animation-delay: 0.17s !important;
+}
+
+.reveal-d3 {
+  animation-delay: 0.26s !important;
+}
+
+.reveal-d4 {
+  animation-delay: 0.35s !important;
+}
 
 /* ── Shimmer border for popular pricing card ─────────────────────── */
 @keyframes border-shimmer {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .shimmer-border {
@@ -235,28 +307,33 @@
   position: absolute;
   inset: -1.5px;
   border-radius: inherit;
-  background: linear-gradient(
-    120deg,
-    var(--accent-dim) 0%,
-    var(--accent) 35%,
-    #fff8 55%,
-    var(--accent) 70%,
-    var(--accent-dim) 100%
-  );
+  background: linear-gradient(120deg,
+      var(--accent-dim) 0%,
+      var(--accent) 35%,
+      #fff8 55%,
+      var(--accent) 70%,
+      var(--accent-dim) 100%);
   background-size: 250% 250%;
   animation: border-shimmer 4s ease-in-out infinite;
   z-index: 0;
 }
 
-.shimmer-border > * {
+.shimmer-border>* {
   position: relative;
   z-index: 1;
 }
 
 /* ── Accent eyebrow slide-in ─────────────────────────────────────── */
 @keyframes slide-right {
-  from { opacity: 0; transform: translateX(-10px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .reveal-eyebrow.in-view {
@@ -264,59 +341,154 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-float-a, .hero-float-b { animation: none; }
-  .reveal, .reveal-fade, .reveal-eyebrow { opacity: 1 !important; animation: none !important; }
-  .shimmer-border::before { animation: none; }
+
+  .hero-float-a,
+  .hero-float-b {
+    animation: none;
+  }
+
+  .reveal,
+  .reveal-fade,
+  .reveal-eyebrow {
+    opacity: 1 !important;
+    animation: none !important;
+  }
+
+  .shimmer-border::before {
+    animation: none;
+  }
 }
 
 /* ── Hero page-load entrance animations ──────────────────────────── */
 @keyframes hi-down {
-  from { opacity: 0; transform: translateY(-14px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes hi-up {
-  from { opacity: 0; transform: translateY(18px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes hi-up-sm {
-  from { opacity: 0; transform: translateY(12px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0)   scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes hi-glow {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* Each element starts fully transparent (opacity:0 in initial state).
    animation-fill-mode: both keeps it hidden before delay fires. */
-.hi-nav   { opacity: 0; animation: hi-down   0.50s cubic-bezier(0.22,1,0.36,1) 0.00s both; }
-.hi-badge { opacity: 0; animation: hi-up     0.55s cubic-bezier(0.22,1,0.36,1) 0.12s both; }
-.hi-h1    { opacity: 0; animation: hi-up-sm  0.65s cubic-bezier(0.22,1,0.36,1) 0.28s both; }
-.hi-desc  { opacity: 0; animation: hi-up     0.55s cubic-bezier(0.22,1,0.36,1) 0.46s both; }
-.hi-cta   { opacity: 0; animation: hi-up     0.55s cubic-bezier(0.22,1,0.36,1) 0.60s both; }
-.hi-free  { opacity: 0; animation: hi-up     0.45s cubic-bezier(0.22,1,0.36,1) 0.74s both; }
-.hi-trust { opacity: 0; animation: hi-up     0.45s cubic-bezier(0.22,1,0.36,1) 0.84s both; }
-.hi-glow  { opacity: 0; animation: hi-glow   1.60s ease-out                    0.05s both; }
+.hi-nav {
+  opacity: 0;
+  animation: hi-down 0.50s cubic-bezier(0.22, 1, 0.36, 1) 0.00s both;
+}
+
+.hi-badge {
+  opacity: 0;
+  animation: hi-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+.hi-h1 {
+  opacity: 0;
+  animation: hi-up-sm 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both;
+}
+
+.hi-desc {
+  opacity: 0;
+  animation: hi-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.46s both;
+}
+
+.hi-cta {
+  opacity: 0;
+  animation: hi-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.60s both;
+}
+
+.hi-free {
+  opacity: 0;
+  animation: hi-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.74s both;
+}
+
+.hi-trust {
+  opacity: 0;
+  animation: hi-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.84s both;
+}
+
+.hi-glow {
+  opacity: 0;
+  animation: hi-glow 1.60s ease-out 0.05s both;
+}
 
 /* Card entrance wrappers.  The wrapper handles opacity + Y entry;
    the CoverageCard inside keeps the separate float animation. */
-.hi-card-a { opacity: 0; animation: hi-up 0.70s cubic-bezier(0.22,1,0.36,1) 0.96s both; }
-.hi-card-b { opacity: 0; animation: hi-up 0.70s cubic-bezier(0.22,1,0.36,1) 1.10s both; }
+.hi-card-a {
+  opacity: 0;
+  animation: hi-up 0.70s cubic-bezier(0.22, 1, 0.36, 1) 0.96s both;
+}
+
+.hi-card-b {
+  opacity: 0;
+  animation: hi-up 0.70s cubic-bezier(0.22, 1, 0.36, 1) 1.10s both;
+}
 
 /* Float animations: delay start until after entrance completes */
-.hero-float-a { animation: hero-float-a 7.5s ease-in-out 1.70s infinite; }
-.hero-float-b { animation: hero-float-b  10s ease-in-out 1.84s infinite; }
+.hero-float-a {
+  animation: hero-float-a 7.5s ease-in-out 1.70s infinite;
+}
+
+.hero-float-b {
+  animation: hero-float-b 10s ease-in-out 1.84s infinite;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .hi-nav, .hi-badge, .hi-h1, .hi-desc, .hi-cta,
-  .hi-free, .hi-trust, .hi-glow, .hi-card-a, .hi-card-b {
+
+  .hi-nav,
+  .hi-badge,
+  .hi-h1,
+  .hi-desc,
+  .hi-cta,
+  .hi-free,
+  .hi-trust,
+  .hi-glow,
+  .hi-card-a,
+  .hi-card-b {
     opacity: 1 !important;
     animation: none !important;
   }
-  .hero-float-a, .hero-float-b { animation: none !important; }
+
+  .hero-float-a,
+  .hero-float-b {
+    animation: none !important;
+  }
 }
 
 /* ── 3-D Flip Card ───────────────────────────────────────────────────
@@ -343,6 +515,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   [style*="transformStyle: preserve-3d"],
   [style*="transform-style: preserve-3d"] {
     transition: none !important;

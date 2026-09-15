@@ -36,11 +36,10 @@ export const AICopilotChat: React.FC<AICopilotChatProps> = ({ data, onMessagesUp
       {
         id: 'msg-init-1',
         role: 'assistant',
-        content: `Hello! I am **ProjectLens AI Copilot**. I analyze software specifications against code implementations for **${projectName}**.\n\n${
-          allowExternalAI
+        content: `Hello! I am **ProjectLens AI Copilot**. I analyze software specifications against code implementations for **${projectName}**.\n\n${allowExternalAI
             ? 'AI-assisted mode is ON for this project — I retrieve only the small set of data relevant to your question and send it to Gemini. You can see exactly what was sent under every answer, and turn this off anytime.'
             : 'This project is in **local-only mode** — I answer using deterministic analysis already computed on the server. No project data is sent to any external AI provider unless you explicitly turn on AI-assisted mode below.'
-        }`,
+          }`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         citations: data?.analysisResults?.length ? [
           { type: 'Requirement', ref: data.analysisResults[0].requirementId, label: `${data.analysisResults[0].requirementTitle} (${data.analysisResults[0].coveragePercent}%)` },
@@ -136,9 +135,8 @@ export const AICopilotChat: React.FC<AICopilotChatProps> = ({ data, onMessagesUp
           </div>
 
           <div
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono border ${
-              allowExternalAI ? 'bg-amber-500/10 border-amber-500/30' : 'bg-emerald-500/10 border-emerald-500/30'
-            }`}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono border ${allowExternalAI ? 'bg-amber-500/10 border-amber-500/30' : 'bg-emerald-500/10 border-emerald-500/30'
+              }`}
           >
             {allowExternalAI ? (
               <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
@@ -165,14 +163,12 @@ export const AICopilotChat: React.FC<AICopilotChatProps> = ({ data, onMessagesUp
             role="switch"
             aria-checked={allowExternalAI}
             onClick={() => onToggleExternalAI?.(!allowExternalAI)}
-            className={`relative shrink-0 w-11 h-6 rounded-full transition-colors cursor-pointer ${
-              allowExternalAI ? 'bg-amber-500' : 'bg-[var(--surface-3)]'
-            }`}
+            className={`relative shrink-0 w-11 h-6 rounded-full transition-colors cursor-pointer ${allowExternalAI ? 'bg-amber-500' : 'bg-[var(--surface-3)]'
+              }`}
           >
             <span
-              className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                allowExternalAI ? 'translate-x-[22px]' : 'translate-x-0.5'
-              }`}
+              className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${allowExternalAI ? 'translate-x-[22px]' : 'translate-x-0.5'
+                }`}
             />
           </button>
         </div>
@@ -188,17 +184,15 @@ export const AICopilotChat: React.FC<AICopilotChatProps> = ({ data, onMessagesUp
             return (
               <div
                 key={msg.id}
-                className={`flex gap-3.5 max-w-3xl ${
-                  isAssistant ? 'mr-auto' : 'ml-auto flex-row-reverse'
-                }`}
+                className={`flex gap-3.5 max-w-3xl ${isAssistant ? 'mr-auto' : 'ml-auto flex-row-reverse'
+                  }`}
               >
                 {/* Avatar */}
                 <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 shadow-sm ${
-                    isAssistant
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 shadow-sm ${isAssistant
                       ? 'bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30 shadow-[0_0_12px_rgba(214,255,63,0.15)]'
                       : 'bg-[var(--surface-3)] text-[var(--text-2)] border border-[var(--border-2)]'
-                  }`}
+                    }`}
                 >
                   {isAssistant ? <Bot className="w-5 h-5 text-[var(--accent)]" /> : <User className="w-5 h-5" />}
                 </div>
@@ -206,11 +200,10 @@ export const AICopilotChat: React.FC<AICopilotChatProps> = ({ data, onMessagesUp
                 {/* Message Bubble */}
                 <div className="space-y-3 min-w-0">
                   <div
-                    className={`p-4 rounded-2xl text-xs leading-relaxed ${
-                      isAssistant
+                    className={`p-4 rounded-2xl text-xs leading-relaxed ${isAssistant
                         ? 'bg-[var(--bg)] border border-[var(--border)] text-[var(--text-2)] shadow-sm'
                         : 'bg-[var(--accent)]/10 border border-[var(--accent)]/30 text-[var(--text-1)] font-medium shadow-md'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between mb-1 text-[10px] text-[var(--text-4)] font-mono">
                       <span className={`font-bold ${isAssistant ? 'text-[var(--accent)]' : 'text-[var(--text-3)]'}`}>

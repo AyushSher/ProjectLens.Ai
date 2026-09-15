@@ -1,5 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ProjectIntelligenceData, Project, ProjectDocument, RequirementAnalysisResult, SoftwareRequirement, ImplementationProfile, ChatMessage } from './types';
+import React, { useCallback, useEffect, useRef } from 'react';
+import {
+  ProjectDocument,
+  RequirementAnalysisResult,
+  SoftwareRequirement,
+  ImplementationProfile,
+  ChatMessage,
+  Project,
+} from './types';
 import { Navbar } from './components/Navbar';
 import { LandingPage } from './components/LandingPage';
 import { SignInPage } from './components/SignInPage';
@@ -19,254 +26,279 @@ import { ScopeCreepPanel } from './components/ScopeCreepPanel';
 import { TestCoverageReport } from './components/TestCoverageReport';
 import { AnalysisHistory } from './components/AnalysisHistory';
 import { ProjectSettingsModal } from './components/ProjectSettingsModal';
-// ── New Feature Imports ──────────────────────────────────────────────
 import { OnboardingTour } from './components/OnboardingTour';
 import { CommandPalette } from './components/CommandPalette';
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { RequirementDrawer } from './components/RequirementDrawer';
 import { FloatingCopilot } from './components/FloatingCopilot';
-import { useCommandPalette } from './contexts/CommandPaletteContext';
-import { useNotifications } from './contexts/NotificationContext';
-import {
-  fetchProjectsApi,
-  createProjectApi,
-  saveProjectApi,
-  deleteProjectApi,
-  evaluateEngineApi,
-} from './services/api';
 import { AppShellSkeleton } from './components/ui/Skeleton';
-import { useToast } from './contexts/ToastContext';
-import { useAuth } from './contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
-type AppView = 'landing' | 'signin' | 'signup' | 'forgot-password' | 'reset-password' | 'app';
+// ── Redux ──────────────────────────────────────────────────────────────────────
+import { useAppDispatch, useAppSelector } from './store/hooks';
+import { restoreSession, signOut as signOutAction, refreshCreditsThunk } from './store/authSlice';
+import { addNotification } from './store/notificationsSlice';
+import {
+  setProjects,
+  setCurrentProject,
+  prependProject,
+  upsertProject,
+  removeProject,
+  setLoadError,
+  resetProjects,
+} from './store/projectsSlice';
+import {
+  setView,
+  setResetToken,
+  setActiveTab,
+  setNewProjectModalOpen,
+  setReportModalOpen,
+  setBuyCreditsModalOpen,
+  setSettingsModalOpen,
+  setShortcutsModalOpen,
+  setProjectsLoading,
+  setSelectedRequirement,
+  resetUi,
+} from './store/uiSlice';
+import {
+  useFetchProjectsQuery,
+  useCreateProjectMutation,
+  useSaveProjectMutation,
+  useDeleteProjectMutation,
+} from './store/projectsApi';
 
-const NAV_TAB_IDS = ['dashboard','rtm','coverage','documents','github','copilot','scope','tests','history'];
+// ── Context hooks (still used — they're shims over Redux) ─────────────────────
+import { useCommandPalette } from './contexts/CommandPaletteContext';
+import { useNotifications } from './contexts/NotificationContext';
+import { useToast } from './contexts/ToastContext';
+import { useAuth } from './contexts/AuthContext';
+
+// ── Service ───────────────────────────────────────────────────────────────────
+import { evaluateEngineApi } from './services/api';
+
+const NAV_TAB_IDS = ['dashboard', 'rtm', 'coverage', 'documents', 'github', 'copilot', 'scope', 'tests', 'history'];
 
 export default function App() {
+  const dispatch = useAppDispatch();
+
+  // ── Auth state (from Redux via AuthContext shim) ───────────────────────────
   const { user, isLoading: authLoading, signOut, refreshCredits, loginWithToken } = useAuth();
-  const [view, setView] = useState<AppView>('landing');
-  const [resetToken, setResetToken] = useState<string>('');
-  const [projectsData, setProjectsData] = useState<ProjectIntelligenceData[]>([]);
-  const [currentProjectId, setCurrentProjectId] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
-  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [isBuyCreditsModalOpen, setIsBuyCreditsModalOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const { showToast } = useToast();
-  // ── Feature 2: Command Palette ───────────────────────────────────────
+
+  // ── UI state from Redux ────────────────────────────────────────────────────
+  const {
+    view,
+    resetToken,
+    activeTab,
+    isNewProjectModalOpen,
+    isReportModalOpen,
+    isBuyCreditsModalOpen,
+    isSettingsModalOpen,
+    isShortcutsModalOpen,
+    isProjectsLoading,
+    selectedRequirement,
+  } = useAppSelector((s) => s.ui);
+
+  // ── Projects state from Redux ──────────────────────────────────────────────
+  const { projectsData, currentProjectId, loadError } = useAppSelector((s) => s.projects);
+
+  // ── Context hooks ──────────────────────────────────────────────────────────
   const { open: openPalette } = useCommandPalette();
-  // ── Feature 4: Notifications ─────────────────────────────────────────
-  const { addNotification } = useNotifications();
-  // ── Feature 5: Keyboard Shortcuts Modal ─────────────────────────────
-  const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
-  // ── Feature 6: Requirement Drawer ───────────────────────────────────
-  const [selectedRequirement, setSelectedRequirement] = useState<RequirementAnalysisResult | null>(null);
-  // Ref used to pre-fill copilot query from the drawer's "Ask Copilot" button
+  const { addNotification: addNote } = useNotifications();
+  const { showToast } = useToast();
+
+  // ── RTK Query: fetch projects ─────────────────────────────────────────────
+  const {
+    data: fetchedProjects,
+    isLoading: projectsFetching,
+    isError: projectsFetchError,
+    error: projectsFetchErrorObj,
+  } = useFetchProjectsQuery(undefined, {
+    // Only run the query when a user is authenticated
+    skip: authLoading || !user,
+  });
+
+  // ── RTK Query: mutations ───────────────────────────────────────────────────
+  const [createProject] = useCreateProjectMutation();
+  const [saveProjectMutation] = useSaveProjectMutation();
+  const [deleteProjectMutation] = useDeleteProjectMutation();
+
+  // ── Copilot prefill ref (not Redux — transient, no DevTools value) ─────────
   const copilotPrefilledQuery = useRef<string | null>(null);
 
-  // ── Feature 5: Global Keyboard Shortcuts ──────────────────────────────
+  // ── Session restore on mount ──────────────────────────────────────────────
+  useEffect(() => {
+    dispatch(restoreSession());
+  }, [dispatch]);
+
+  // ── Sync fetched projects into Redux projectsSlice ────────────────────────
+  useEffect(() => {
+    if (projectsFetching) {
+      dispatch(setProjectsLoading(true));
+      return;
+    }
+    dispatch(setProjectsLoading(false));
+
+    if (projectsFetchError) {
+      const msg =
+        'Could not reach the ProjectLens API / MongoDB. Make sure the server is running and refresh.';
+      dispatch(setLoadError(msg));
+      showToast(msg, 'error');
+      return;
+    }
+
+    if (fetchedProjects) {
+      dispatch(setProjects(fetchedProjects));
+      dispatch(setLoadError(null));
+    }
+  }, [fetchedProjects, projectsFetching, projectsFetchError, dispatch, showToast]);
+
+  // ── Sync view with auth state once session restored ───────────────────────
+  useEffect(() => {
+    if (authLoading) return;
+    if (user && view !== 'app') dispatch(setView('app'));
+  }, [authLoading, user]);
+
+  // ── URL param handling: ?token= and ?oauthToken= ──────────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    const token = params.get('token');
+    if (token) {
+      dispatch(setResetToken(token));
+      dispatch(setView('reset-password'));
+      window.history.replaceState({}, '', window.location.pathname);
+      return;
+    }
+
+    const oauthToken = params.get('oauthToken');
+    if (oauthToken) {
+      window.history.replaceState({}, '', window.location.pathname);
+      loginWithToken(oauthToken)
+        .then(() => dispatch(setView('app')))
+        .catch((err) => {
+          console.error('[OAuth] Failed to validate token:', err);
+          dispatch(setView('signin'));
+        });
+    }
+  }, []);
+
+  // ── Global keyboard shortcuts ─────────────────────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't fire shortcuts when typing in an input/textarea/select
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
-      // Ctrl+K / Cmd+K → Command Palette
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         openPalette();
         return;
       }
-
-      // ? → Keyboard Shortcuts Modal
       if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
-        setIsShortcutsModalOpen(true);
+        dispatch(setShortcutsModalOpen(true));
         return;
       }
-
-      // Alt+1-9 → Switch to nav tab by index
       if (e.altKey && /^[1-9]$/.test(e.key)) {
         e.preventDefault();
         const idx = parseInt(e.key, 10) - 1;
-        if (idx < NAV_TAB_IDS.length) setActiveTab(NAV_TAB_IDS[idx]);
+        if (idx < NAV_TAB_IDS.length) dispatch(setActiveTab(NAV_TAB_IDS[idx]));
         return;
       }
-
-      // Alt+N → New Project
       if (e.altKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();
-        setIsNewProjectModalOpen(true);
+        dispatch(setNewProjectModalOpen(true));
         return;
       }
-
-      // Alt+R → Report Modal
       if (e.altKey && e.key.toLowerCase() === 'r') {
         e.preventDefault();
-        setIsReportModalOpen(true);
+        dispatch(setReportModalOpen(true));
         return;
       }
-
-      // Alt+C → AI Copilot
       if (e.altKey && e.key.toLowerCase() === 'c') {
         e.preventDefault();
-        setActiveTab('copilot');
+        dispatch(setActiveTab('copilot'));
         return;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [openPalette]);
+  }, [openPalette, dispatch]);
 
-  // On mount: check for URL params —
-  //   ?token=      → password reset flow
-  //   ?oauthToken= → Google OAuth sign-in redirect
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-
-    // Password reset token
-    const token = params.get('token');
-    if (token) {
-      setResetToken(token);
-      setView('reset-password');
-      window.history.replaceState({}, '', window.location.pathname);
-      return;
-    }
-
-    // Google OAuth token — store & resolve user, then go to app
-    const oauthToken = params.get('oauthToken');
-    if (oauthToken) {
-      window.history.replaceState({}, '', window.location.pathname);
-      loginWithToken(oauthToken)
-        .then(() => setView('app'))
-        .catch((err) => {
-          console.error('[OAuth] Failed to validate token:', err);
-          setView('signin');
-        });
-    }
-  }, []);
-
-  // Sync view with auth state once AuthContext finishes restoring the session
-  useEffect(() => {
-    if (authLoading) return; // wait for session restore
-    if (user && view !== 'app') {
-      setView('app'); // already logged in — go straight to app
-    }
-  }, [authLoading, user]);
-
-  // Load persisted projects from MongoDB (via the Express API) once auth has resolved.
-  // We skip the fetch entirely when no user is logged in to avoid a spurious
-  // "Could not reach the API" error toast on the landing / sign-in screens.
-  useEffect(() => {
-    // Still waiting for the session to be restored — do nothing yet.
-    if (authLoading) return;
-
-    // No authenticated user — nothing to fetch; just stop the loading spinner.
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await fetchProjectsApi();
-        if (cancelled) return;
-        setProjectsData(data);
-        setCurrentProjectId(data[0]?.project.id || '');
-        setLoadError(null);
-      } catch (err: any) {
-        if (cancelled) return;
-        console.error('Failed to load projects', err);
-        const msg = 'Could not reach the ProjectLens API / MongoDB. Make sure the server is running and refresh.';
-        setLoadError(msg);
-        showToast(msg, 'error');
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [authLoading, user]);
-
-  // BUG FIX: the original app assumed there was always at least one
-  // project (from static sample data) and let several tabs dereference
-  // `currentProjectData.field` directly. With real project creation/
-  // deletion the list can now legitimately be empty, so we guard here.
+  // ── Derived current project ────────────────────────────────────────────────
   const currentProjectData =
     projectsData.find((p) => p.project.id === currentProjectId) || projectsData[0] || null;
 
-  // Helper to update current project data locally
-  const updateCurrentProjectData = (updater: (prev: ProjectIntelligenceData) => ProjectIntelligenceData) => {
-    if (!currentProjectId) return;
-    setProjectsData((prevList) =>
-      prevList.map((p) => (p.project.id === currentProjectId ? updater(p) : p))
-    );
-  };
+  // ── Helper: update one project in the Redux store optimistically ──────────
+  const updateCurrentProjectData = useCallback(
+    (updater: (prev: typeof currentProjectData) => typeof currentProjectData) => {
+      if (!currentProjectData) return;
+      const updated = updater(currentProjectData);
+      if (updated) dispatch(upsertProject(updated));
+    },
+    [currentProjectData, dispatch]
+  );
 
-  // Persist a snapshot of the current project to MongoDB.
-  const persistProject = async (projectId: string, snapshot: Partial<Omit<ProjectIntelligenceData, 'project'>> & { project?: Partial<ProjectIntelligenceData['project']> }) => {
-    try {
-      await saveProjectApi(projectId, snapshot);
-    } catch (err) {
-      console.warn('Failed to persist project changes', err);
-      showToast('Changes were made locally but failed to save. Check your connection.', 'error');
-    }
-  };
+  // ── Helper: persist project snapshot to server ────────────────────────────
+  const persistProject = useCallback(
+    async (
+      projectId: string,
+      snapshot: Parameters<typeof saveProjectMutation>[0]['data']
+    ) => {
+      try {
+        const result = await saveProjectMutation({ projectId, data: snapshot }).unwrap();
+        dispatch(upsertProject(result));
+      } catch (err) {
+        console.warn('Failed to persist project changes', err);
+        showToast('Changes were made locally but failed to save. Check your connection.', 'error');
+      }
+    },
+    [saveProjectMutation, dispatch, showToast]
+  );
 
-  // Step 1: Create New Project — credit gate is enforced server-side
+  // ── Step 1: Create Project ─────────────────────────────────────────────────
   const handleCreateProject = async (draftProject: Project) => {
     try {
-      const created = await createProjectApi({
+      const created = await createProject({
         name: draftProject.name,
         description: draftProject.description,
         deadline: draftProject.deadline,
         techStack: draftProject.techStack,
         githubUrl: draftProject.githubUrl,
-      });
-      setProjectsData((prev) => [created, ...prev]);
-      setCurrentProjectId(created.project.id);
-      setActiveTab('documents');
+      }).unwrap();
+
+      dispatch(prependProject(created));
+      dispatch(setActiveTab('documents'));
+      dispatch(setNewProjectModalOpen(false));
       showToast(`Project "${created.project.name}" created`, 'success');
-      // Feature 4: fire notification
-      addNotification({
-        type: 'success',
-        title: 'Project Created',
-        message: `"${created.project.name}" created successfully. Upload documents to get started.`,
-        tab: 'documents',
-      });
-      // Refresh credit state after a project is consumed
+      dispatch(
+        addNotification({
+          type: 'success',
+          title: 'Project Created',
+          message: `"${created.project.name}" created successfully. Upload documents to get started.`,
+          tab: 'documents',
+        })
+      );
       await refreshCredits();
     } catch (err: any) {
       console.error('Failed to create project', err);
       if (err.status === 402) {
-        // No credits remaining — open the Buy Credits modal
         showToast('No credits remaining. Purchase credits to create more projects.', 'error');
-        setIsNewProjectModalOpen(false);
-        setIsBuyCreditsModalOpen(true);
+        dispatch(setNewProjectModalOpen(false));
+        dispatch(setBuyCreditsModalOpen(true));
       } else {
         showToast('Could not create the project. Try again.', 'error');
       }
     }
   };
 
+  // ── Delete Project ─────────────────────────────────────────────────────────
   const handleDeleteProject = async (projectId: string) => {
-    const deletedName = projectsData.find((p) => p.project.id === projectId)?.project.name || 'Project';
+    const deletedName =
+      projectsData.find((p) => p.project.id === projectId)?.project.name || 'Project';
     try {
-      await deleteProjectApi(projectId);
-      setProjectsData((prev) => {
-        const remaining = prev.filter((p) => p.project.id !== projectId);
-        if (currentProjectId === projectId) {
-          setCurrentProjectId(remaining[0]?.project.id || '');
-        }
-        return remaining;
-      });
+      await deleteProjectMutation(projectId).unwrap();
+      dispatch(removeProject(projectId));
       showToast(`"${deletedName}" deleted`, 'success');
     } catch (err) {
       console.error('Failed to delete project', err);
@@ -274,13 +306,12 @@ export default function App() {
     }
   };
 
-  // Step 2 & 3: Add Document & Extract Requirements
+  // ── Add Document & Extract Requirements ────────────────────────────────────
   const handleAddDocument = async (doc: ProjectDocument, extractedReqs: SoftwareRequirement[]) => {
     if (!currentProjectData) return;
     const updatedDocs = [...currentProjectData.documents, doc];
     const updatedReqs = [...currentProjectData.requirements, ...extractedReqs];
 
-    // Re-evaluate engine metrics if implementation profile exists
     let updatedResults = currentProjectData.analysisResults;
     let updatedHealth = currentProjectData.healthMetrics;
 
@@ -293,7 +324,6 @@ export default function App() {
         console.warn('Re-evaluation error', err);
       }
     } else {
-      // Build initial requirement analysis results with 0% coverage until repo analyzed
       updatedResults = updatedReqs.map((r) => ({
         requirementId: r.id,
         requirementTitle: r.title,
@@ -304,7 +334,7 @@ export default function App() {
         missingComponents: r.expectedComponents,
         coveragePercent: 0,
         confidencePercent: 95,
-        status: 'Missing',
+        status: 'Missing' as const,
         evidence: {
           detectedFiles: [],
           detectedRoutes: [],
@@ -320,19 +350,17 @@ export default function App() {
         sprintProgress: 0,
         githubActivity: 0,
         overallScore: 0,
-        healthRating: 'Healthy',
+        healthRating: 'Healthy' as const,
         highRiskModules: [],
         keyRiskFactors: ['Connect GitHub repository to evaluate code implementation.'],
       };
     }
 
-    updateCurrentProjectData((prev) => ({
-      ...prev,
-      documents: updatedDocs,
-      requirements: updatedReqs,
-      analysisResults: updatedResults,
-      healthMetrics: updatedHealth,
-    }));
+    updateCurrentProjectData((prev) =>
+      prev
+        ? { ...prev, documents: updatedDocs, requirements: updatedReqs, analysisResults: updatedResults, healthMetrics: updatedHealth }
+        : prev
+    );
 
     await persistProject(currentProjectData.project.id, {
       documents: updatedDocs,
@@ -341,9 +369,13 @@ export default function App() {
       healthMetrics: updatedHealth,
     });
 
-    showToast(`"${doc.name}" added — ${extractedReqs.length} requirement${extractedReqs.length === 1 ? '' : 's'} extracted`, 'success');
+    showToast(
+      `"${doc.name}" added — ${extractedReqs.length} requirement${extractedReqs.length === 1 ? '' : 's'} extracted`,
+      'success'
+    );
   };
 
+  // ── Remove Document ────────────────────────────────────────────────────────
   const handleRemoveDocument = async (docId: string) => {
     if (!currentProjectData) return;
     const removedDoc = currentProjectData.documents.find((d) => d.id === docId);
@@ -352,7 +384,7 @@ export default function App() {
       (r) => !removedDoc || r.sourceDocument !== removedDoc.name
     );
 
-    let updatedResults: any[] = [];
+    let updatedResults: RequirementAnalysisResult[] = [];
     let updatedHealth = currentProjectData.healthMetrics;
 
     if (currentProjectData.implementationProfile && updatedReqs.length > 0) {
@@ -365,13 +397,11 @@ export default function App() {
       }
     }
 
-    updateCurrentProjectData((prev) => ({
-      ...prev,
-      documents: updatedDocs,
-      requirements: updatedReqs,
-      analysisResults: updatedResults,
-      healthMetrics: updatedHealth,
-    }));
+    updateCurrentProjectData((prev) =>
+      prev
+        ? { ...prev, documents: updatedDocs, requirements: updatedReqs, analysisResults: updatedResults, healthMetrics: updatedHealth }
+        : prev
+    );
 
     await persistProject(currentProjectData.project.id, {
       documents: updatedDocs,
@@ -383,64 +413,62 @@ export default function App() {
     showToast(removedDoc ? `"${removedDoc.name}" removed` : 'Document removed', 'info');
   };
 
+  // ── Analyze Repo ───────────────────────────────────────────────────────────
   const handleAnalyzeRepo = async (profile: ImplementationProfile) => {
     if (!currentProjectData) return;
     try {
       const evalRes = await evaluateEngineApi(currentProjectData.requirements, profile);
-      updateCurrentProjectData((prev) => ({
-        ...prev,
-        implementationProfile: profile,
-        analysisResults: evalRes.analysisResults,
-        healthMetrics: evalRes.healthMetrics,
-      }));
+      updateCurrentProjectData((prev) =>
+        prev
+          ? { ...prev, implementationProfile: profile, analysisResults: evalRes.analysisResults, healthMetrics: evalRes.healthMetrics }
+          : prev
+      );
       await persistProject(currentProjectData.project.id, {
         implementationProfile: profile,
         analysisResults: evalRes.analysisResults,
         healthMetrics: evalRes.healthMetrics,
       });
       showToast(`Repository analyzed — ${evalRes.healthMetrics.overallScore}% overall health`, 'success');
-      // Feature 4: analysis complete notification
-      addNotification({
-        type: 'success',
-        title: 'Analysis Complete',
-        message: `${profile.repoName} analyzed — ${evalRes.healthMetrics.overallScore}% overall health score.`,
-        tab: 'coverage',
-      });
-      // Feature 4: scope creep notification if detected
-      if (evalRes.healthMetrics.scopeCreep && evalRes.healthMetrics.scopeCreep.length > 0) {
+      dispatch(
         addNotification({
-          type: 'warning',
-          title: 'Scope Creep Detected',
-          message: `${evalRes.healthMetrics.scopeCreep.length} out-of-scope feature(s) detected in your codebase.`,
-          tab: 'scope',
-        });
+          type: 'success',
+          title: 'Analysis Complete',
+          message: `${profile.repoName} analyzed — ${evalRes.healthMetrics.overallScore}% overall health score.`,
+          tab: 'coverage',
+        })
+      );
+      if (evalRes.healthMetrics.scopeCreep && evalRes.healthMetrics.scopeCreep.length > 0) {
+        dispatch(
+          addNotification({
+            type: 'warning',
+            title: 'Scope Creep Detected',
+            message: `${evalRes.healthMetrics.scopeCreep.length} out-of-scope feature(s) detected in your codebase.`,
+            tab: 'scope',
+          })
+        );
       }
     } catch (err) {
-      updateCurrentProjectData((prev) => ({
-        ...prev,
-        implementationProfile: profile,
-      }));
+      updateCurrentProjectData((prev) =>
+        prev ? { ...prev, implementationProfile: profile } : prev
+      );
       await persistProject(currentProjectData.project.id, { implementationProfile: profile });
       showToast('Repository connected, but coverage scoring failed. Try re-analyzing.', 'error');
     }
   };
 
-  // Steps 11 & 12: persist AI Copilot conversation history
+  // ── Copilot chat history ───────────────────────────────────────────────────
   const handleChatMessagesUpdate = async (messages: ChatMessage[]) => {
     if (!currentProjectData) return;
-    updateCurrentProjectData((prev) => ({ ...prev, chatMessages: messages }));
+    updateCurrentProjectData((prev) => (prev ? { ...prev, chatMessages: messages } : prev));
     await persistProject(currentProjectData.project.id, { chatMessages: messages });
   };
 
-  // Consent gate for the AI Copilot's RAG retrieval: off by default per
-  // project. Persisted server-side so the backend enforces it, not just
-  // the UI (see server/routes/copilot.js).
+  // ── Toggle external AI ─────────────────────────────────────────────────────
   const handleToggleExternalAI = async (allow: boolean) => {
     if (!currentProjectData) return;
-    updateCurrentProjectData((prev) => ({
-      ...prev,
-      project: { ...prev.project, allowExternalAI: allow },
-    }));
+    updateCurrentProjectData((prev) =>
+      prev ? { ...prev, project: { ...prev.project, allowExternalAI: allow } } : prev
+    );
     await persistProject(currentProjectData.project.id, { project: { allowExternalAI: allow } });
     showToast(
       allow
@@ -450,17 +478,15 @@ export default function App() {
     );
   };
 
-  // Sign out handler — clears auth and returns to landing
+  // ── Sign out ───────────────────────────────────────────────────────────────
   const handleSignOut = () => {
     signOut();
-    setView('landing');
-    // Reset project state so next login starts fresh
-    setProjectsData([]);
-    setCurrentProjectId('');
-    setActiveTab('dashboard');
+    dispatch(resetProjects());
+    dispatch(resetUi());
   };
 
-  // ── Auth is still being restored from localStorage — show spinner ──
+  // ── Render guards ──────────────────────────────────────────────────────────
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
@@ -469,13 +495,12 @@ export default function App() {
     );
   }
 
-  // ── Public pages ────────────────────────────────────────────────────
   if (view === 'landing') {
     return (
       <LandingPage
-        onGetStarted={() => setView('signin')}
-        onSignIn={() => setView('signin')}
-        onSignUp={() => setView('signup')}
+        onGetStarted={() => dispatch(setView('signin'))}
+        onSignIn={() => dispatch(setView('signin'))}
+        onSignUp={() => dispatch(setView('signup'))}
       />
     );
   }
@@ -483,9 +508,9 @@ export default function App() {
   if (view === 'signin') {
     return (
       <SignInPage
-        onNavigateSignUp={() => setView('signup')}
-        onNavigateLanding={() => setView('landing')}
-        onNavigateForgotPassword={() => setView('forgot-password')}
+        onNavigateSignUp={() => dispatch(setView('signup'))}
+        onNavigateLanding={() => dispatch(setView('landing'))}
+        onNavigateForgotPassword={() => dispatch(setView('forgot-password'))}
       />
     );
   }
@@ -493,8 +518,8 @@ export default function App() {
   if (view === 'signup') {
     return (
       <SignUpPage
-        onNavigateSignIn={() => setView('signin')}
-        onNavigateLanding={() => setView('landing')}
+        onNavigateSignIn={() => dispatch(setView('signin'))}
+        onNavigateLanding={() => dispatch(setView('landing'))}
       />
     );
   }
@@ -502,8 +527,8 @@ export default function App() {
   if (view === 'forgot-password') {
     return (
       <ForgotPasswordPage
-        onNavigateSignIn={() => setView('signin')}
-        onNavigateLanding={() => setView('landing')}
+        onNavigateSignIn={() => dispatch(setView('signin'))}
+        onNavigateLanding={() => dispatch(setView('landing'))}
       />
     );
   }
@@ -512,28 +537,27 @@ export default function App() {
     return (
       <ResetPasswordPage
         token={resetToken}
-        onNavigateSignIn={() => setView('signin')}
-        onNavigateForgotPassword={() => setView('forgot-password')}
+        onNavigateSignIn={() => dispatch(setView('signin'))}
+        onNavigateForgotPassword={() => dispatch(setView('forgot-password'))}
       />
     );
   }
 
-  // ── Protected: redirect unauthenticated users to sign in ────────────
   if (!user) {
     return (
       <SignInPage
-        onNavigateSignUp={() => setView('signup')}
-        onNavigateLanding={() => setView('landing')}
+        onNavigateSignUp={() => dispatch(setView('signup'))}
+        onNavigateLanding={() => dispatch(setView('landing'))}
       />
     );
   }
 
-  if (isLoading) {
+  if (isProjectsLoading) {
     return <AppShellSkeleton />;
   }
 
   const freeRemaining = user.freeProjectsRemaining ?? 2;
-  const paidCreds     = user.paidCredits           ?? 0;
+  const paidCreds = user.paidCredits ?? 0;
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text-1)] font-sans selection:bg-[var(--accent)]/25 selection:text-[var(--accent)] antialiased">
@@ -547,18 +571,18 @@ export default function App() {
       <Navbar
         projects={projectsData}
         currentProject={currentProjectData}
-        onSelectProject={(id) => setCurrentProjectId(id)}
-        onOpenNewProject={() => setIsNewProjectModalOpen(true)}
-        onOpenReportModal={() => setIsReportModalOpen(true)}
+        onSelectProject={(id) => dispatch(setCurrentProject(id))}
+        onOpenNewProject={() => dispatch(setNewProjectModalOpen(true))}
+        onOpenReportModal={() => dispatch(setReportModalOpen(true))}
         onDeleteProject={handleDeleteProject}
-        onOpenSettings={currentProjectData ? () => setIsSettingsModalOpen(true) : undefined}
+        onOpenSettings={currentProjectData ? () => dispatch(setSettingsModalOpen(true)) : undefined}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={(tab) => dispatch(setActiveTab(tab))}
         onSignOut={handleSignOut}
-        onBuyCredits={() => setIsBuyCreditsModalOpen(true)}
+        onBuyCredits={() => dispatch(setBuyCreditsModalOpen(true))}
         user={user}
-        onOpenShortcuts={() => setIsShortcutsModalOpen(true)}
-        onNavigateTab={setActiveTab}
+        onOpenShortcuts={() => dispatch(setShortcutsModalOpen(true))}
+        onNavigateTab={(tab) => dispatch(setActiveTab(tab))}
       />
 
       {/* Main View Container */}
@@ -566,22 +590,20 @@ export default function App() {
         {activeTab === 'dashboard' && (
           <Dashboard
             data={currentProjectData}
-            onNavigateTab={setActiveTab}
+            onNavigateTab={(tab) => dispatch(setActiveTab(tab))}
             freeProjectsRemaining={freeRemaining}
             paidCredits={paidCreds}
-            onBuyCredits={() => setIsBuyCreditsModalOpen(true)}
+            onBuyCredits={() => dispatch(setBuyCreditsModalOpen(true))}
           />
         )}
 
-        {/* BUG FIX: these tabs used to dereference currentProjectData directly
-            (no null-check), which threw a runtime error whenever the project
-            list was empty. They now render an empty-state instead of crashing. */}
         {activeTab === 'rtm' && (
           <TraceabilityMatrix
             analysisResults={currentProjectData?.analysisResults || []}
             onSelectRequirement={(reqId) => {
-              const found = currentProjectData?.analysisResults.find((r) => r.requirementId === reqId) || null;
-              setSelectedRequirement(found);
+              const found =
+                currentProjectData?.analysisResults.find((r) => r.requirementId === reqId) || null;
+              dispatch(setSelectedRequirement(found));
             }}
           />
         )}
@@ -603,7 +625,7 @@ export default function App() {
         )}
 
         {activeTab === 'documents' && !currentProjectData && (
-          <EmptyProjectPrompt onCreate={() => setIsNewProjectModalOpen(true)} />
+          <EmptyProjectPrompt onCreate={() => dispatch(setNewProjectModalOpen(true))} />
         )}
 
         {activeTab === 'github' && currentProjectData && (
@@ -616,31 +638,32 @@ export default function App() {
         )}
 
         {activeTab === 'github' && !currentProjectData && (
-          <EmptyProjectPrompt onCreate={() => setIsNewProjectModalOpen(true)} />
+          <EmptyProjectPrompt onCreate={() => dispatch(setNewProjectModalOpen(true))} />
         )}
 
         {activeTab === 'copilot' && currentProjectData && (
-          <AICopilotChat data={currentProjectData} onMessagesUpdate={handleChatMessagesUpdate} onToggleExternalAI={handleToggleExternalAI} />
+          <AICopilotChat
+            data={currentProjectData}
+            onMessagesUpdate={handleChatMessagesUpdate}
+            onToggleExternalAI={handleToggleExternalAI}
+          />
         )}
 
         {activeTab === 'copilot' && !currentProjectData && (
-          <EmptyProjectPrompt onCreate={() => setIsNewProjectModalOpen(true)} />
+          <EmptyProjectPrompt onCreate={() => dispatch(setNewProjectModalOpen(true))} />
         )}
 
-        {/* Feature 1: Scope Creep Panel */}
         {activeTab === 'scope' && currentProjectData && (
           <ScopeCreepPanel healthMetrics={currentProjectData.healthMetrics} />
         )}
         {activeTab === 'scope' && !currentProjectData && (
-          <EmptyProjectPrompt onCreate={() => setIsNewProjectModalOpen(true)} />
+          <EmptyProjectPrompt onCreate={() => dispatch(setNewProjectModalOpen(true))} />
         )}
 
-        {/* Feature 2: Test Coverage Gap Report */}
         {activeTab === 'tests' && (
           <TestCoverageReport analysisResults={currentProjectData?.analysisResults || []} />
         )}
 
-        {/* Feature 3: Analysis History & Diff */}
         {activeTab === 'history' && (
           <AnalysisHistory
             analysisHistory={currentProjectData?.analysisHistory || []}
@@ -649,79 +672,75 @@ export default function App() {
         )}
       </main>
 
-      {/* Step 1: New Project Modal */}
+      {/* New Project Modal */}
       <NewProjectModal
         isOpen={isNewProjectModalOpen}
-        onClose={() => setIsNewProjectModalOpen(false)}
+        onClose={() => dispatch(setNewProjectModalOpen(false))}
         onCreateProject={handleCreateProject}
       />
 
-      {/* Step 14: Report Generator Modal */}
+      {/* Report Generator Modal */}
       <ReportGeneratorModal
         isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
+        onClose={() => dispatch(setReportModalOpen(false))}
         data={currentProjectData}
       />
 
       {/* Buy Credits Modal */}
       <BuyCreditsModal
         isOpen={isBuyCreditsModalOpen}
-        onClose={() => setIsBuyCreditsModalOpen(false)}
+        onClose={() => dispatch(setBuyCreditsModalOpen(false))}
         onSuccess={async () => {
           await refreshCredits();
         }}
       />
 
-      {/* Project Settings Modal (Slack + API Keys) */}
+      {/* Project Settings Modal */}
       {currentProjectData && isSettingsModalOpen && (
         <ProjectSettingsModal
           project={currentProjectData}
-          onClose={() => setIsSettingsModalOpen(false)}
-          onSaved={(updated) => {
-            setProjectsData((prev) =>
-              prev.map((p) => p.project.id === updated.project.id ? updated : p)
-            );
-          }}
+          onClose={() => dispatch(setSettingsModalOpen(false))}
+          onSaved={(updated) => dispatch(upsertProject(updated))}
         />
       )}
 
-      {/* ── Feature 1: Onboarding Tour ──────────────────────────────── */}
+      {/* Onboarding Tour */}
       <OnboardingTour />
 
-      {/* ── Feature 2: Command Palette ─────────────────────────────── */}
+      {/* Command Palette */}
       <CommandPalette
         projects={projectsData}
         currentProjectId={currentProjectId}
-        onSelectProject={(id) => setCurrentProjectId(id)}
-        onNavigateTab={setActiveTab}
-        onOpenNewProject={() => setIsNewProjectModalOpen(true)}
-        onOpenReport={() => setIsReportModalOpen(true)}
-        onBuyCredits={() => setIsBuyCreditsModalOpen(true)}
+        onSelectProject={(id) => dispatch(setCurrentProject(id))}
+        onNavigateTab={(tab) => dispatch(setActiveTab(tab))}
+        onOpenNewProject={() => dispatch(setNewProjectModalOpen(true))}
+        onOpenReport={() => dispatch(setReportModalOpen(true))}
+        onBuyCredits={() => dispatch(setBuyCreditsModalOpen(true))}
         onSignOut={handleSignOut}
-        onOpenShortcuts={() => setIsShortcutsModalOpen(true)}
+        onOpenShortcuts={() => dispatch(setShortcutsModalOpen(true))}
       />
 
-      {/* ── Feature 5: Keyboard Shortcuts Modal ─────────────────────── */}
+      {/* Keyboard Shortcuts Modal */}
       <KeyboardShortcutsModal
         isOpen={isShortcutsModalOpen}
-        onClose={() => setIsShortcutsModalOpen(false)}
+        onClose={() => dispatch(setShortcutsModalOpen(false))}
       />
 
-      {/* ── Feature 6: Requirement Detail Drawer ────────────────────── */}
+      {/* Requirement Detail Drawer */}
       <RequirementDrawer
         result={selectedRequirement}
-        onClose={() => setSelectedRequirement(null)}
+        onClose={() => dispatch(setSelectedRequirement(null))}
         onAskCopilot={(query) => {
           copilotPrefilledQuery.current = query;
-          setActiveTab('copilot');
-          setSelectedRequirement(null);
+          dispatch(setActiveTab('copilot'));
+          dispatch(setSelectedRequirement(null));
         }}
       />
 
-      {/* ── Feature 7: Floating Copilot Button ──────────────────────── */}
+      {/* Floating Copilot Button */}
       <FloatingCopilot
         activeTab={activeTab}
-        onNavigateCopilot={() => setActiveTab('copilot')}
+        onNavigateCopilot={() => dispatch(setActiveTab('copilot'))}
       />
     </div>
   );

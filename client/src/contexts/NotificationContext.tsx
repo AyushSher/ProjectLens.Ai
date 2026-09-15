@@ -1,4 +1,21 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+/**
+ * NotificationContext — backward-compatible shim on top of Redux notificationsSlice.
+ *
+ * All existing components that call `useNotifications()` continue to work unchanged.
+ * Note: `timestamp` is stored as an ISO string in Redux (Date is not serializable).
+ * The context converts it back to a Date when exposing to consumers.
+ */
+import React, { createContext, useCallback, useContext } from 'react';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import {
+  addNotification as addNotificationAction,
+  markRead as markReadAction,
+  markAllRead as markAllReadAction,
+  clearAll as clearAllAction,
+  selectUnreadCount,
+} from '../store/notificationsSlice';
+
+// ── Public types (unchanged) ──────────────────────────────────────────────────
 
 export type NotificationType = 'success' | 'warning' | 'info' | 'error';
 
@@ -7,9 +24,9 @@ export interface AppNotification {
   type: NotificationType;
   title: string;
   message: string;
-  timestamp: Date;
+  timestamp: Date;  // exposed as Date (converted from ISO string stored in Redux)
   read: boolean;
-  tab?: string; // optional: navigate to this tab when clicked
+  tab?: string;
 }
 
 interface NotificationContextValue {
@@ -23,38 +40,34 @@ interface NotificationContextValue {
 
 const NotificationContext = createContext<NotificationContextValue | undefined>(undefined);
 
-function genId() {
-  return `notif-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-}
+// ── Provider ──────────────────────────────────────────────────────────────────
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const dispatch = useAppDispatch();
+  const rawItems = useAppSelector((s) => s.notifications.items);
+  const unreadCount = useAppSelector(selectUnreadCount);
+
+  // Convert ISO strings → Date for consumers
+  const notifications: AppNotification[] = rawItems.map((n) => ({
+    ...n,
+    timestamp: new Date(n.timestamp),
+  }));
 
   const addNotification = useCallback(
     (n: Omit<AppNotification, 'id' | 'timestamp' | 'read'>) => {
-      setNotifications((prev) => [
-        { ...n, id: genId(), timestamp: new Date(), read: false },
-        ...prev,
-      ]);
+      dispatch(addNotificationAction(n));
     },
-    []
+    [dispatch]
   );
 
-  const markRead = useCallback((id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
-  }, []);
+  const markRead = useCallback(
+    (id: string) => dispatch(markReadAction(id)),
+    [dispatch]
+  );
 
-  const markAllRead = useCallback(() => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  }, []);
+  const markAllRead = useCallback(() => dispatch(markAllReadAction()), [dispatch]);
 
-  const clearAll = useCallback(() => {
-    setNotifications([]);
-  }, []);
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const clearAll = useCallback(() => dispatch(clearAllAction()), [dispatch]);
 
   return (
     <NotificationContext.Provider
@@ -64,6 +77,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     </NotificationContext.Provider>
   );
 };
+
+// ── Hook (unchanged public API) ───────────────────────────────────────────────
 
 export function useNotifications(): NotificationContextValue {
   const ctx = useContext(NotificationContext);

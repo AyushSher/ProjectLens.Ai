@@ -1,4 +1,15 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+/**
+ * ThemeContext — backward-compatible shim on top of Redux themeSlice.
+ *
+ * All existing components that call `useTheme()` continue to work unchanged.
+ * The actual theme value, localStorage sync, and DOM attribute updates are
+ * all handled inside themeSlice.ts.
+ */
+import React, { createContext, useCallback, useContext } from 'react';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { toggleTheme as toggleThemeAction } from '../store/themeSlice';
+
+// ── Public interface (unchanged) ──────────────────────────────────────────────
 
 type Theme = 'dark' | 'light';
 
@@ -9,29 +20,24 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-const STORAGE_KEY = 'projectlens-theme';
-
-function getInitialTheme(): Theme {
-  if (typeof window === 'undefined') return 'dark';
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (stored === 'light' || stored === 'dark') return stored;
-  // Respect the OS-level preference on first visit, default to dark otherwise.
-  if (window.matchMedia?.('(prefers-color-scheme: light)').matches) return 'light';
-  return 'dark';
-}
+// ── Provider ──────────────────────────────────────────────────────────────────
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  const dispatch = useAppDispatch();
+  const theme = useAppSelector((s) => s.theme.theme);
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    window.localStorage.setItem(STORAGE_KEY, theme);
-  }, [theme]);
+  const toggleTheme = useCallback(() => {
+    dispatch(toggleThemeAction());
+  }, [dispatch]);
 
-  const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-
-  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 };
+
+// ── Hook (unchanged public API) ───────────────────────────────────────────────
 
 export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext);

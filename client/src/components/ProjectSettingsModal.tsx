@@ -106,7 +106,14 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ proj
     try {
       const updated = await saveProjectApi(project.project.id, {
         project: {
-          autoSchedule: { enabled: schedEnabled, frequency: schedFrequency },
+          autoSchedule: {
+            enabled: schedEnabled,
+            frequency: schedFrequency,
+            lastRunAt: null,
+            nextRunAt: null,
+            lastStatus: null,
+            lastError: null,
+          },
         },
       });
       onSaved(updated);
